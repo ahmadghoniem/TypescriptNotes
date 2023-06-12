@@ -5,16 +5,24 @@ element.textContent = year;
 //Within our if check, TypeScript sees typeof padding === "number" and understands that as a
 // special form of code called a type guard.
 
-const value = "Hello";
+interface Circle {
+  kind: "circle";
+  radius: number;
+}
+interface Square {
+  kind: "square";
+  sideLength: number;
+}
 
-interface Container {
-  value: number | null | undefined;
+type Shape = Circle | Square;
+function getArea(shape: Shape) {
+  switch (shape.kind) {
+    case "circle":
+      return Math.PI * shape.radius ** 2;
+    case "square":
+      return shape.sideLength ** 2;
+    default:
+      const _exhaustiveCheck: never = shape;
+      return _exhaustiveCheck;
   }
-  function multiplyValue(container: Container, factor: number) {
-  // Remove both 'null' and 'undefined' from the type.
-  if (container.value != null) {
-  console.log(container.value);
-  // Now we can safely multiply 'container.value'.
-  container.value *= factor;
-  }
-  }
+}
