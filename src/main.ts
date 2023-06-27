@@ -21,7 +21,7 @@
 
 */
 
-// >> TYPE ANNOTATION <<
+// > TYPE ANNOTATION <
 
 let myNumber: number = 1;
 // adding type annotation to myNumber is explicitly saying that it's of type number
@@ -44,22 +44,30 @@ let idk: RegExp = /\w+/g;
 // TIP: you can use VS Code intellisense to know beforehand the type of data
 // after hovering over idk turns out the data type for a regular expression is RegExp
 
-// >> ARRAYS <<
+// > ARRAYS <
 
 let stringsArr: Array<string> = ["one", "hey", "Dave"];
 let guitars: (string | number)[] = ["guitar", "les paul", 5150];
 let mixedData: Array<string | number | boolean> = ["evh", 1984, true];
-// string[] === Array<sting> you can use both
+// string[] === Array<sting> (generic) you can use both
 
 stringsArr.push(42); // Argument of type 'number' is not assignable to parameter of type 'string'
 guitars[0] = 1984; // not locked in to the position of the element but rather to the types defined for the array (string|number)[]
 guitars = mixedData; // because guitars is of type (string | number)[] and mixedData is of type (string | number | boolean)[] it won't allow it while the other way around will work
 
-let test: any[] = [];
-let bands: string[] = [];
-bands.push("Van Halen");
+// >> Any Type <<
+// In TypeScript, the any type is a special type that represents values that can be of any type.
+// It is a dynamic type that essentially disables type checking for the variable or expression it is applied to
+// think of it as a type that can dynamically cast itself to match any other type when you try assigning it.
 
-//  >>TUPLES<<
+// By pushing band_311 which os of any type to bands array, you are effectively discarding the type safety provided by TypeScript
+let testArr: any[] = [311];
+const [band_311] = testArr; // band_311 is of type any
+let bands: string[] = []; // bands array elements are of type string
+
+bands.push(band_311); // IS OK
+
+//  >TUPLES<
 /**
  * A tuple is data type introduced by Typescript which is a typed array with a pre-defined length and types for each index.
  * intellisense will infer the data type of both myTuple and mixed is of type (string | number | boolean)[]
@@ -73,9 +81,10 @@ mixed = myTuple; // no problem arises
 
 mixed[3] = "Sheko"; // mixed doesn't have a predefined length
 let myName = "ahmad";
-myTuple[3] = myName; // type string isn't assignable to undefined
+myTuple[2] = myName; // type string isn't assignable to boolean
+myTuple[3] = myName; // Tuple type '[string, number, boolean]' of length '3' has no element at index '3'
 
-//  >>OBJECTS<<
+//  >OBJECTS<
 
 let myObject: Object;
 
@@ -85,22 +94,23 @@ myObject = {
 
 myObject.prop1 = 3;
 // by default prop1 data type will be inferred as a string and type number isn't assignable to string
+// this also goes for variables
 
-// Type Aliases
+// > Type Aliases <
 type primitives = string | number | boolean;
 
-// working with union types
+// >> working with union types <<
 
-// TypeScript will only allow an operation if it is valid for every member of the union.
-// For example, if you have the union string | number
-// TS will only suggest the functions that are available on both a string and number
-// like toLocaleString, valueOf, toString
+/* TypeScript will only allow an operation if it is valid for every member of the union.
+For example, if you have the union string | number
+TS will only suggest the functions that are available on both a string and number
+like toLocaleString, valueOf, toString */
 
 const printId = (ID: string | number) => ID.toLocaleString();
 // and will throw an error when you try to use a function that's available only on a string type but not a number type
 const printMoreIds = (ID: number | string) => ID.toUpperCase(); // property toUpperCase doesn't exist on type number
 
-// solution? Narrowing using type guards
+// SOLUTION? Narrowing using type guards
 
 // >Type Guards<
 
@@ -143,13 +153,18 @@ const doubleNegation = !!"hey"; // infers it to `true` as it's const
 const booleanConstructor = Boolean("hey"); // infers it to `boolean` although it's const
 let doubleNeg = !!"hey"; // infers it to `boolean` as it may change (let)
 
+// NOTE: Optional chaining denoted by the ?.operator is a feature in Javascript
+// that allows developers to safely access properties and methods of an object without triggering a runtime error if the object is null or undefined
+// So if any of the properties or methods in the chain is undefined, the expression evaluates to undefined, rather than triggering a runtime error.
+
 // >>Truthiness narrowing<<
 
 const testFunction = (strings: string | string[] | null) => {
   // typeof param === "object") this shall narrow down param to be string[] | null as both are of type `object`
   // you might don't wanna deal with a null value and don't wanna use optional chaining operator
-  // so we use Truthiness narrowing
-  if (typeof strings === "object" && !!strings) {
+  // so we use Truthiness narrowing strings !== null or !!strings to ignore falsy values like undefined or null
+
+  if (typeof strings === "object" && strings !== null) {
     strings.map((ele: string) => console.log(ele)); // narrowed down to string[] only
     // so we won't get TypeError: null is not iterable
   } else {
@@ -173,8 +188,8 @@ function move(animal: Fish | Bird | Human) {
   }
 }
 // >>instanceof narrowing<<
+// in JavaScript x instanceof Date checks whether the prototype chain of x contains Date.prototype
 
-// in JavaScript x instanceof Foo checks whether the prototype chain of x contains Foo.prototype
 function logValue(x: Date | string) {
   if (x instanceof Date) {
     console.log(x.toUTCString()); // x:Date
@@ -182,10 +197,9 @@ function logValue(x: Date | string) {
     console.log(x.toUpperCase()); // x:string
   }
 }
-// >>type predicates<<
-let pet: Fish | Bird =
-  Math.random() < 0.5 ? { swim: () => {} } : { fly: () => {} };
+// >>user-defined type guard with type predicates<<
 
+let pet = Math.random() < 0.5 ? { swim: () => {} } : { fly: () => {} };
 // To define a user-defined type guard, we simply need to define a function whose return type is a type predicate
 // A type predicate takes the form `parameterName is Type` in our case pet is Fish
 function isFish(pet: Fish | Bird): pet is Fish {
@@ -197,13 +211,13 @@ function isFish(pet: Fish | Bird): pet is Fish {
 
 // right now we have our own type guard (hover over pet)
 if (isFish(pet)) {
+  // isFish(pet) returns boolean
   pet.swim();
 } else {
   pet.fly();
 }
 
 /* Sometimes you'll have a union where all the members have something in common. For example,
-
 - both arrays and strings have a slice method. If every member in a union has a property in
 - common, you can use that property without narrowing */
 
@@ -228,20 +242,23 @@ interface PersonInterface {
 }
 
 // > differences between an interface and a type <
+/* Type aliases and interfaces are very similar, and in many cases you can choose between them freely.
+Almost all features of an interface are available in type , the key distinction is that a type
+cannot be re-opened to add new properties vs an interface which is always extendable.
+also you can't define a type alias using an interface but you can using the type keyword */
 
-// 1. you can't define a type alias using an interface but you can use a type alias inside of it
-// 2. a type cannot be re-opened to add new properties vs an interface which is always extendable.
+type stringOrNumberType = string | number;
+interface stringOrNumber = string | number;  // not applicable
 
 // extending an interface
-
 interface AnimalInterface {
   name: string;
 }
 interface BearInterface extends AnimalInterface {
   lovesHoney: boolean;
 }
-// adding new properties to a Type
 
+// Extending a type via intersections
 type AnimalType = {
   name: string;
 };
@@ -249,22 +266,17 @@ type BearType = AnimalType & {
   lovesHoney: boolean;
 };
 
-console.log(
-  (({ lovesHoney, name }: BearInterface | BearType): string =>
-    !lovesHoney ? name : `friendly ${name}`)({
-    lovesHoney: true,
-    name: "bigBear",
-  })
-);
-
-// 3. declaration merging will work with interfaces but not with types
+// declaration merging will work with interfaces but not with types
 
 interface shirtInterface {
   color: string;
 }
 interface shirtInterface {
   size: number;
+  color:number; // overriding with another type will result in an error
 }
+let myShirt:shirtInterface = {color:"red",size:32}; 
+// if either of color or size properties are missing it will result in an error 
 
 type shirtType = {
   color: string;
@@ -274,7 +286,6 @@ type shirtType = {
   size: number;
 };
 
-// final NOTE: use type for type aliases , interface is useful for declaration merging
 
 // using a defined type to annotate an object
 const Person: PersonType = {
@@ -285,18 +296,36 @@ const Person: PersonType = {
 Person.yearsOfExp = 2; // Property 'yearsOfExp' does not exist on type 'PersonType'
 // you can use VS Code's Quick Fix to add yearsOfExp as a property to PersonType with it's type inferred by TS
 
+// NOTE: use type for type aliases and make use of interface for declaration merging and defining object types.
+
 // >ENUMS<
 
-// Unlike most TypeScript features, Enums are not a type-level addition to JavaScript
-// but something added to the language and runtime.
+// Unlike most TypeScript features
+// Enums are not a type-level addition to JavaScript.
+// but it's a feature that goes beyond types and extends into the actual JavaScript language itself during runtime.
 
 enum Grade {
   D, // 0
   C, // 1
-  B = 101,
-  A, // 102
-  X, // 103
+  B = 68,
+  A, // 69
 }
+
+// JS CODE OUTPUT
+var Grade; // undefined
+(function (Grade) {
+  // Grade has been assigned to an empty object as it was previously undefined.
+  // each Enum member has a reverse mapping where the property name is assigned to the associated value.
+      
+  Grade[Grade["D"] = 0] = "D"; 
+  // Grade["D"] = 0; Assigns the value 0 to the key "D" in the Grade object,    
+  // Additionally, assigns the value "D" to the property 0 in the Grade object achieving reverse mapping.
+
+Grade[Grade["B"] = 68] = "B";
+  Grade[Grade["A"] = 69] = "A";
+})(Grade || (Grade = {}));
+// Grade || (Grade = {}) is a common technique in JavaScript to provide a default value for a variable if it is falsy or undefined
+
 
 // >LITERAL TYPES<
 
@@ -314,9 +343,9 @@ familyMembers = "siblings"; // intellisense will suggest the literal strings you
 // might change values later so if it's of type string it infers it's type to be a string rather than assigning a type literal.
 
 interface handleRequestType {
-  (a: string, b: "GET" | "POST"): any;
+  (a: string, b: "GET" | "POST"): void;
 }
-const handleRequest: handleRequestType = (url, method) => "";
+const handleRequest: handleRequestType = (url, method) => {};
 
 let req = { url: "www.example.com", method: "GET" };
 // type of req object is inferred to be {url: string, method: string} rather than { url:"www...", method:"GET"}
@@ -324,11 +353,11 @@ let req = { url: "www.example.com", method: "GET" };
 handleRequest(req.url, req.method); // Argument of type 'string' is not assignable to parameter of type '"GET" | "POST"
 
 // solution 1
-let req1 = { url: "www.example.com", method: "GET" } as const; // readonly literal types
+let req1 = { url: "www.example.com", method: "GET" } as const; // readonly literal types for both the url and method props
 // solution 2
-let req2 = { url: "www.example.com", method: "GET" as const }; // readonly literal types using as const or possible as "GET"
+let req2 = { url: "www.example.com", method: "GET" as const }; // readonly literal type for method prop using as const or possibly as "GET"
 // solution 3
-handleRequest(req.url, req.method as "GET"); // using as const or possible as "GET"
+handleRequest(req.url, req.method as "GET"); // using as const or possibly as "GET" while passing the function's argument
 
 // >FUNCTIONS<
 
@@ -336,28 +365,32 @@ handleRequest(req.url, req.method as "GET"); // using as const or possible as "G
 
 const greetPerson = ({ name, age }: PersonType): string | boolean => {
   // return type annotation
+ 
   return `hello ${name} your age is ${age?.toFixed}`;
   // 'age' is possibly 'undefined' if you are okay with it being undefined in this case
-  //add ?. optional chaining operator or make sure that it's provided
+  // add ?. optional chaining operator so the expression can evaluate to undefined if the property doesn't exist in the object
+  // or use the non null assertion operator or make sure that it's provided
 
   if (age !== undefined) return `hello ${name} your age is ${age.toFixed}`;
   //this makes sure that age isn't undefined
 
   if (age != undefined) return `hello ${name} your age is ${age.toFixed}`;
-  // but age might bu null | undefined
-  // you can use loose equality to get rid of null and undefined
+  // but age might be null | undefined
+  // you can use `loose equality `to get rid of null and undefined
 
   if (age) return `hello ${name} your age is ${age.toFixed}`;
-  // this will get rid of both null and undefined but falsy values will equate to false as will such as 0 and ""
+  // this will get rid of both null and undefined but falsy values will equate to false as will. such as 0 and ""
 
-  // without any return greetPerson would have a return type of either a string or boolean (default return type of a function)
+  // without any return greetPerson would have a return type of undefined which isn't assignable to string | boolean and will throw an error
 };
 
 greetPerson(Person, 5);
-// Even if you don't have type annotations on your parameters (parameters are of any type),
+// Even if you don't have type annotations on your parameters (parameters are of `any` type),
 // TypeScript will still check that you passed the right number of arguments.
+// NOTE: log method on the console object has a rest parameter of type ...data:any[]
+// which means that that the rest parameter which is an array will hold any type of values console.log("ahmad",3,{age:32})
 
-// >TYPE ANNOTATION: FUNCTIONS<
+// >>FUNCTIONS: TYPE ANNOTATION<<
 
 // using type keyword
 type mathFunctionType = (a: number, b: number) => number;
@@ -377,13 +410,16 @@ const subFunc = (a: number, b: number = 2, c?: number) => {
 // NOTE: optional parameters should be the last on the list of parameters
 // as a required parameter cannot follow an optional parameter
 
-// Rest parameters
-const total = (...numbers: number[]): number =>
-  numbers.reduce((acc, curr) => acc + curr);
+// A rest parameter must be last in a parameter list
+const total = (init: number = 0, ...numbers: number[]): number =>
+  numbers.reduce((acc, curr) => acc + curr, init);
+
+// >>TYPE ANNOTATION: FUNCTIONS<<
+
 
 // >>Never Type<<
-
 // functions that explicitly throw error or causes infinity loop returns never type
+
 //  also it's possible when narrowing that you reduce the options of a union to a point where you have removed all
 //  possibilities and have nothing left. In those cases, TypeScript will use a never type to represent a
 //  state which shouldn't exist */
@@ -397,15 +433,42 @@ const getRevealBalloons = (gender: "male" | "female") => {
     color = "violet";
     return `it's a girl🎉, getting you ${color} balloons`;
   } else {
-    const exhaustiveCheck: never = gender;
-    // gender is of type never as all of it's possibilities have been handled
-    // so it's assignable to exhaustiveCheck which is of type never
-    // as type never is assignable only to type never
-    return exhaustiveCheck;
+    // gender is of type never as all of it's possibilities have already been handled
+    return gender;
+    
   }
   //throw new Error("this shouldn't have happened");
   // while(true){}
 };
+// >>INDEX SIGNATURES<<
+// https://dmitripavlutin.com/typescript-index-signatures/
+
+interface TransactionObj {
+  readonly [index: string]: number;
+  // readonly is an optional keyword to add to specify that the object
+  //with a TransactionObj type the user shouldn't be able to add any extra properties to it
+  /*   This index signature states
+that when a TransactionObj is indexed with a number , it will return a string .
+An index signature property type must be either 'string' or 'number'. */
+  Pizza: number;
+  Books: number;
+  Job: number;
+}
+
+const todaysTransactions: TransactionObj = {
+  Pizza: -10,
+  Books: -5,
+  Job: 50,
+};
+// as you know there's two ways to access a property in an object
+console.log(todaysTransactions.Pizza); // dot notation
+console.log(todaysTransactions["Pizza"]); // bracket notation
+
+let prop = "Pizza";
+console.log(todaysTransactions[prop]);
+// when accessing properties with variable key it's important to specify
+// an index signature because prop is inferred to be of type string while there's no way to tell which types the key takes
+// NOTE: an object key is either a string | number
 
 // >TYPE ASSERTIONS/COERCION<
 
@@ -419,11 +482,16 @@ let src: string = image.src; // TS Error: image' is possibly 'null'.
 
 // >>Non-null Assertion Operator<<
 
-// Of we have a value and it's type is between type | null | undefined
-// you can add Non-null Assertion Operator (Postfix !) at the end to eliminate the possibility of it being null or undefined
+// The purpose of the non-null assertion operator is to tell the compiler that a variable or expression is guaranteed to have a non-null value at runtime.
+// if we have a union type of any_type | null | undefined
+// you can add Non-null Assertion Operator (Postfix !) to eliminate the possibility of it being either null or undefined
 
 src = image!.src; // before the Non-null Assertion Operator we had an error 'image' is possibly 'null'
-src = image?.src; // before the Non-null Assertion Operator we had an error 'image' is possibly 'null'
+
+src = image?.src; // The optional chaining operator is used to safely access properties that may not exist,
+// ensuring that the expression evaluates to undefined if the property is not available. However, in this case,
+// `src` is expected to be of type string and cannot accept undefined.
+
 
 let myImage = document.querySelector("img") as HTMLImageElement; // more specific
 myImage = document.querySelector("img")!;
@@ -445,6 +513,9 @@ let names = nickNames as names; // assertion to less specific
 let realName = nickNames as realName; // assertion to very specific
 
 // solution: forced casting or double casting using any or unknown
+// NOTE: In TypeScript, any value can be assigned to the “unknown” type,
+// but without a type assertion, “unknown” can’t be assigned to anything but itself
+
 realName = nickNames as any as realName;
 // use case for a type coercion
 const addOrConcat = (
@@ -458,20 +529,55 @@ let addition: number = addOrConcat(2, 3, "add") as number; // 5
 // WARNING: TS sees no problem with this as you are telling it that you know better than it does when it comes to the output type
 let concatenation: number = addOrConcat(2, 3, "concat") as number; // "23" this shall return a string and you are coercing it as if it's returning a number
 
-//  >CLASSES<
+// >CLASSES<
+// https://www.typescriptlang.org/docs/handbook/2/classes.html
+// read the notes added in the handbook
+// worth noting that
+class Animal {
+  name: string; // a class field/property
+  // there's no difference between the two terms but
+  // The term "field" was used so it could cover both public and private (since private fields are not properties)
 
-class Coder {
-  name: string; // you need the property to exist in the class as a member
-  music: string;
-  age: number;
-  lang: string; //Property 'music' has no initializer and is not definitely assigned in the constructor.ts(2564)
-
-  // properties and methods are called members
-  constructor(name: string, music: string, age: number, lang: string) {
-    this.name = name; // and you also need it in the constructor
-    this.music = music; // and you also need it in the constructor
-    this.age = age; // and you also need it in the constructor
-    this.lang = lang; // and you also need it in the constructor
+  age: number = 25; // already initialized with a value
+  constructor(name) {
+    this.initialize(); // not recommended
+    this.name = name; // recommended
   }
-  // visibilty modifier as public // visibility members
+  initialize() {
+    this.name = "Animal";
+  }
 }
+/**
+ * if you are using a function invocation to initialize a property in the constructor
+ * TypeScript compiler's strictPropertyInitialization flag may raise an error, as it does not recognize that the property is properly initialized by a method.
+ * Furthermore, when considering derived classes, there is a possibility that these methods can be overridden in derived classes,
+ * leading to potential failures in initializing the members correctly. */
+
+class Dog extends Animal {
+  initialize() {}
+  // overwrote the initialize function thus failing to initialize the name field/property
+
+  constructor(name: string) {
+    super(name);
+    this.name = name;
+  }
+
+  // scenario 2
+  initialize() {
+    this.name = "dog";
+  }
+  // even though the name property was initialized, if you are not using the null assertion operator
+  // strictPropertyInitialization flag may raise an error.
+
+  // but if you are using a library and that library is going to fill some of the properties for you
+  // you can add a null assertion operator !
+  // Not initialized, but no error
+  name!: string;
+
+  initializeByLibrary() {
+    this.name = "dog";
+  }
+}
+
+const dog = new Dog();
+console.log(dog.name);
