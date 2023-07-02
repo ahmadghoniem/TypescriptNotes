@@ -248,7 +248,7 @@ cannot be re-opened to add new properties vs an interface which is always extend
 also you can't define a type alias using an interface but you can using the type keyword */
 
 type stringOrNumberType = string | number;
-interface stringOrNumber = string | number;  // not applicable
+interface stringOrNumber { string | number};  // not applicable
 
 // extending an interface
 interface AnimalInterface {
@@ -304,28 +304,37 @@ Person.yearsOfExp = 2; // Property 'yearsOfExp' does not exist on type 'PersonTy
 // Enums are not a type-level addition to JavaScript.
 // but it's a feature that goes beyond types and extends into the actual JavaScript language itself during runtime.
 
-enum Grade {
-  D, // 0
-  C, // 1
-  B = 68,
-  A, // 69
+// TS
+enum CompassDirection1 {
+  North,
+  East,
+  South,
+  West,
 }
+console.log(CompassDirection);
 
-// JS CODE OUTPUT
-var Grade; // undefined
-(function (Grade) {
-  // Grade has been assigned to an empty object as it was previously undefined.
-  // each Enum member has a reverse mapping where the property name is assigned to the associated value.
-      
-  Grade[Grade["D"] = 0] = "D"; 
-  // Grade["D"] = 0; Assigns the value 0 to the key "D" in the Grade object,    
-  // Additionally, assigns the value "D" to the property 0 in the Grade object achieving reverse mapping.
 
-Grade[Grade["B"] = 68] = "B";
-  Grade[Grade["A"] = 69] = "A";
-})(Grade || (Grade = {}));
-// Grade || (Grade = {}) is a common technique in JavaScript to provide a default value for a variable if it is falsy or undefined
+// JS OUTPUT
 
+var CompassDirection; // undefined
+(function (CompassDirection) {
+  CompassDirection[(CompassDirection["North"] = 0)] = "North";
+  // CompassDirection["North"] = 0 evaluates to 0 Assigning the value 0
+  // to the key "North" in CompassDirection object.
+
+  // Additionally, assigns the value "North" to the property 0
+  // in the CompassDirection object achieving reverse mapping.
+
+  CompassDirection[(CompassDirection["East"] = 1)] = "East";
+  CompassDirection[(CompassDirection["South"] = 2)] = "South";
+  CompassDirection[(CompassDirection["West"] = 3)] = "West";
+})(CompassDirection || (CompassDirection = {}));
+
+// CompassDirection|| (CompassDirection= {}) is a common technique in JavaScript.
+// which provides a default value for a variable if it is falsy or undefined
+
+console.log(CompassDirection);
+// {0: 'Up', 1: 'Down', 2: 'Left', 3: 'Right', Up: 0, Down: 1, Left: 2, Right: 3}
 
 // >LITERAL TYPES<
 
@@ -414,10 +423,100 @@ const subFunc = (a: number, b: number = 2, c?: number) => {
 const total = (init: number = 0, ...numbers: number[]): number =>
   numbers.reduce((acc, curr) => acc + curr, init);
 
-// >>TYPE ANNOTATION: FUNCTIONS<<
+// >>FUNCTIONS: SIGNATURE<<
+// The function signature consists of 1.method name and 2.the number of arguments the function requires.
+
+/** In JavaScript, functions can have properties in addition to being callable. However, the function type
+ * expression syntax [function () {}] doesn't allow for declaring properties. If we want to describe something callable
+ * with properties, we can write a call signature in an object type: */
+// read more (if you need to) on page 58.
+
+// >>FUNCTIONS: INDEX/KEY SIGNATURE<<
+// Sometimes you don't know all the names of a type's properties ahead of time, but you do know how they would look like.
+// In those cases you can use an index signature to describe the types of possible values,
+// read page 84 & this as well: https://dev.to/afrazkhan/typescript-index-signature-4npo
 
 
-// >>Never Type<<
+// >>FUNCTIONS: OVERLOADING<<
+
+/** JavaScript doesn’t support overloaded functions.
+ * Overloaded functions are functions having the same name but different signatures, that is, the number of the arguments.
+ * For example , you might wanna write a function to produce a Date that takes either a timestamp (one argument) or a
+ * month/day/year specification (three arguments).
+ * In TypeScript, we can specify a function that can be called in different ways by writing overload signatures. */
+
+// To do this, write some number of function signatures , followed by the body of the function
+interface Coordinate {
+    [key: string]:  number,
+  x: number;
+  y: number;
+}
+// function signatures
+function parseCoordinate(str: string): Coordinate;
+function parseCoordinate(obj: Coordinate): Coordinate;
+function parseCoordinate(x: number, y: number): Coordinate;
+
+// body of the actual function
+function parseCoordinate(arg1: unknown, arg2?: unknown): Coordinate {
+  let coord: Coordinate = {
+    x: 0,
+    y: 0,
+  };
+  if (typeof arg1 === "string") {
+    // arg1 narrowed down to string so it's safe to use split
+    (arg1).split(",").forEach((str) => {
+      const [key, value] = str.split(":");
+      coord[key as keyof Coordinate] = parseInt(value, 10);
+    });
+  } else if (typeof arg1 === "object") {
+    coord = {
+      ...(arg1 as Coordinate), // bec you are eventually returning coord and the return type needs to be of type Coordinate
+    };
+  } else {
+    coord = {
+      x: arg1 as number,
+      y: arg2 as number,
+    };
+  }
+
+  return coord;
+}
+
+console.log(parseCoordinate(10, 20));
+console.log(parseCoordinate({ x: 52, y: 35 }));
+console.log(parseCoordinate("x:12,y:22"));
+
+// NOTE: Always prefer parameters with union types instead of overloads when possible why? check page 70.
+
+
+// >>FUNCTIONS: Optional Parameters in Callbacks<<
+// check page 66 with the comments
+
+
+// >>FUNCTIONS: using `this` as a parameter<<
+
+// JS specification states that you cannot define a parameter called 'this'
+// so it uses that syntax space to let you  declare the type for this in the function body.
+// you need to remember that arrow function don't have a 'this' of their own
+
+// in JS (this is a TS file so you won't get the error mentioned)
+function usingThisAsParam(this) {
+console.log(this); // SyntaxError: Unexpected token 'this'
+}
+
+//  We need to be explicit in places where TypeScript is unaware of its surroundings.
+const element = document.querySelector("button") as HTMLButtonElement; // typeof element === "object"
+function handleClick(this: HTMLButtonElement, event: Event) {
+  // 'this' implicitly has type 'any' because it does not have a type annotation
+  console.log(this.innerText);
+}
+
+  // 'this' isn't to be mistaken as a real param as it's going to be removed
+  // just like type annotations gets removed when it gets compiled down to js
+  element.addEventListener("click", handleClick);
+// NOTE: if you are going to specify a type for this keyword it needs to be the very first parameter.
+
+// >never Type<
 // functions that explicitly throw error or causes infinity loop returns never type
 
 //  also it's possible when narrowing that you reduce the options of a union to a point where you have removed all
@@ -440,35 +539,22 @@ const getRevealBalloons = (gender: "male" | "female") => {
   //throw new Error("this shouldn't have happened");
   // while(true){}
 };
-// >>INDEX SIGNATURES<<
-// https://dmitripavlutin.com/typescript-index-signatures/
 
-interface TransactionObj {
-  readonly [index: string]: number;
-  // readonly is an optional keyword to add to specify that the object
-  //with a TransactionObj type the user shouldn't be able to add any extra properties to it
-  /*   This index signature states
-that when a TransactionObj is indexed with a number , it will return a string .
-An index signature property type must be either 'string' or 'number'. */
-  Pizza: number;
-  Books: number;
-  Job: number;
+// >unknown Type<
+
+// The unknown type represents any value. This is similar to the any type, but is safer.
+// because you cannot directly perform operations on an unknown parameter without first narrowing its type or performing type checks.
+// unlike any which essentially disables type checking so you will be able to use the parameter before narrowing defies the purpose of type safety. 
+// You need to explicitly handle type checking or assertions before using the value.
+
+// it's very useful in overloads as well (check overloads)
+
+function f1(a: any) {
+a.b(); // OK
 }
-
-const todaysTransactions: TransactionObj = {
-  Pizza: -10,
-  Books: -5,
-  Job: 50,
-};
-// as you know there's two ways to access a property in an object
-console.log(todaysTransactions.Pizza); // dot notation
-console.log(todaysTransactions["Pizza"]); // bracket notation
-
-let prop = "Pizza";
-console.log(todaysTransactions[prop]);
-// when accessing properties with variable key it's important to specify
-// an index signature because prop is inferred to be of type string while there's no way to tell which types the key takes
-// NOTE: an object key is either a string | number
+function f2(a: unknown) {
+a.b();
+}
 
 // >TYPE ASSERTIONS/COERCION<
 
@@ -581,3 +667,150 @@ class Dog extends Animal {
 
 const dog = new Dog();
 console.log(dog.name);
+
+// >GENERICS< 
+
+// generics allow for a placeholder / a type variable
+
+const echoString = (arg:string):string => arg; // specific to a string but what if we wanted a generic echo
+const echo = <T>(arg:T):T => arg; // generic echo where you can pass any type you want
+
+// imagine you have a function that will be returning  
+function getElement<Type,Index extends Array<Type>.length>(arr: Type[],  index:  number)  {
+  return arr[index];
+  }
+const arr = ["str","",""];
+arr.at()
+  console.log(firstElement(arr,""));
+
+
+const isObj = <T>(arg:T):boolean => (typeof arg === 'object' && !Array.isArray(arg) && arg !== null)
+// NOTE: echo and isObj won't aren't custom type guards and won't behave as type guard 
+// because a custom type guard needs to have a return type of ParamName is `type` (string) using the `is` testing operator
+
+interface BoolCheck<T> {
+  value: T,
+  is: boolean,
+}
+
+const isTrue = <T>(arg:T):BoolCheck<T> => {
+  if (typeof arg  === 'object' && arg !== null && Object.keys(arg as keyof T).length === 0)  {
+
+    // WARNING: the order is crucial in this if statement as having object.keys before arg !== null 
+    // will break the code because calling Object.keys static method on a null value will result in an Uncaught TypeError
+    return {value:  arg, is:  false }
+  }
+  else if (typeof arg  === 'object' && Array.isArray(arg) && arg.length === 0)  {
+    return {value:  arg, is:  false }
+  } 
+  return {value:  arg, is:  !!arg }
+}
+
+// 
+
+interface hasID {
+  id:number
+}
+
+const processUser = <T extends hasID>(user:  T):T => {
+  return user;
+}
+console.log(processUser({id:1,name:"hello"})); // if you passed an object that doesn't have an id prop you will get an error
+
+const getUsersProps = <T extends hasID,K extends keyof T>(users: T[], key: K):T[K][] => {
+  return users.map(user => user[key]); 
+  // also because key Param is extending keys of T which are the user's data there's no need to coerce the type of key as keyof T
+  // which is another use case of generics
+}
+const userArray = [{
+    "id": 1,
+    "name": "Leanne Graham",
+    "username": "Bret",
+    "email": "Sincere@april.biz",
+    "address": {
+        "street": "Kulas Light",
+        "suite": "Apt. 556",
+        "city": "Gwenborough",
+        "zipcode": "92998-3874",
+        "geo": {
+            "lat": "-37.3159",
+            "lng": "81.1496"
+        }
+    },
+    "phone": "1-770-736-8031 x56442",
+    "website": "hildegard.org",
+    "company": {
+        "name": "Romaguera-Crona",
+        "catchPhrase": "Multi-layered client-server neural-net",
+        "bs": "harness real-time e-markets"
+    }
+  }
+,{
+  "id": 2,
+  "name": "Leanne Graham",
+  "username": "Bret",
+  "email": "Sincere@april.biz",
+  "address": {
+      "street": "Kulas Light",
+      "suite": "Apt. 556",
+      "city": "Gwenborough",
+      "zipcode": "92998-3874",
+      "geo": {
+          "lat": "-37.3159",
+          "lng": "81.1496"
+      }
+  },
+  "phone": "1-770-736-8031 x56442",
+  "doppie":"do",
+  "website": "hildegard.org",
+  "company": {
+      "name": "Romaguera-Crona",
+      "catchPhrase": "Multi-layered client-server neural-net",
+      "bs": "harness real-time e-markets"
+  }
+}]
+console.log(getUsersProps(userArray,"phone")); // using K as a type for key or even keyof T will infer the keys of the users being passed in the 1st Param
+
+// >>GENERICS: CLASSES<<
+
+class stateObject<T> {
+  private data: T
+  constructor(value:T) {
+    this.data = value
+  }
+   get state():T {
+    return this.data;
+   }
+   set state(value: T) {
+    this.data = value;
+   }
+}
+const inferredStore = new stateObject("inferred string"); // before passing "string" the generic T was of type unknown
+const genericStore = new stateObject<string>("non inferred string"); // before passing "string" the generic T was of type string as specified 
+
+inferredStore.state = "dave"; // type has been inferred to be string
+store.state = 12; //since the type has been inferred to be string assigning it to a number will cause an error
+
+// same as the example below
+let string = "";
+string = 2;
+
+// >>GENERICS: Specifying Type Arguments<<
+// TypeScript can usually infer the intended type arguments in a generic call, but not always. For
+// example, let's say you wrote a function to combine two arrays
+
+function combine<Type>(arr1: Type[], arr2: Type[]): Type[] {
+  return arr1.concat(arr2);
+  }
+  
+  combine(["STRING"],[0]); // inferred generic type is string based on the 1st argument
+    // Type 'string' is not assignable to type 'number'
+
+  combine([0],["STRING"]);     // inferred generic type is number based on the 1st argument
+  // Type 'number' is not assignable to type 'string'
+
+  // to solve this 
+  const combinedArr = combine<string | number>([1, 2, 3], ["hello"]); // specifying Type argument instead of relying on Typescript to infer it
+
+// NOTE: When possible, use the type parameter itself rather than constraining it
+// NOTE: Always use as few type parameters as possible

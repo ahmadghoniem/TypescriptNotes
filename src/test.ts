@@ -87,18 +87,28 @@ console.log(obj.sheko); */
 let myNameTest: string = "ahmad";
 let anyType: any = 3;
 myNameTest = anyType;
-console.log(myNameTest);
 
 (async () => {
   let res = await fetch("../test.json");
   return res;
-})().then((res) => console.log(res));
+})().then((res) => console.log());
 
 /* let testArr: any[] = [311];
 const [band_311] = testArr; // band_311 is of type any
 let bands: string[] = []; // bands array elements are of type string
 
 bands.push(band_311); */
-function greeter(fn: (a) => void) {
+/* function greeter(fn: (a: string) => void) {
   fn("Hello, World");
+  }
+ */
+//
+
+const element = document.querySelector("button");
+
+function handleClick(this: HTMLButtonElement, event: Event) {
+  // ✅ this = HTMLButtonElement
+  console.log(this.innerText);
 }
+
+element.addEventListener("click", () => handleClick());
