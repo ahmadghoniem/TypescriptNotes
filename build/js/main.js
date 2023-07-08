@@ -259,10 +259,17 @@ const subFunc = (a, b = 2, c) => {
         return a - b - c;
     return a - b;
 };
-// NOTE: optional parameters should be the last on the list of parameters
-// as a required parameter cannot follow an optional parameter
+// WARNING: optional parameters should be the last on the list of parameters
+// as a required parameter cannot follow an optional parameter.
+// because you will need to explicitly pass undefined in place of the optional parameters in order to pass the rest.
 // A rest parameter must be last in a parameter list
 const total = (init = 0, ...numbers) => numbers.reduce((acc, curr) => acc + curr, init);
+// >>FUNCTIONS: PARAMETER DESTRUCTURING<<
+// parameters have implicitly type 'any'
+// b has been defaulted to 100 so the inferred type is no longer 'any' but 'number'
+const addFuncDestructure = ({ a: number, b = 100, c }) => {
+    return a + b + c;
+};
 // body of the actual function
 function parseCoordinate(arg1, arg2) {
     let coord = {
@@ -341,12 +348,42 @@ const getRevealBalloons = (gender) => {
 // unlike any which essentially disables type checking so you will be able to use the parameter before narrowing defies the purpose of type safety. 
 // You need to explicitly handle type checking or assertions before using the value.
 // it's very useful in overloads as well (check overloads)
-function f1(a) {
-    a.b(); // OK
+function f1(arg) {
+    arg.toString(); // OK
 }
-function f2(a) {
-    a.b();
+function f2(arg) {
+    arg.toString(); // NOT OK
+    if (typeof arg === "number") {
+        arg.toString(); // (parameter) arg: number
+    }
+    if (arg instanceof Date) {
+        arg.toString(); // (parameter) arg: Date
+    }
 }
+// >empty object {} Type<
+// https://www.totaltypescript.com/the-empty-object-type-in-typescript
+// The empty type {} describes an object that has no property on its own.
+// but Instead of representing an empty object, {} represents any value except null and undefined.
+// so if you attempted to assign an object with property there won't be a problem.
+// however you won't be able to access it which renders {} somehow useless.
+const example1 = "str";
+const example2 = 123;
+const example3 = true;
+const example4 = {
+    foo: "whatever",
+};
+example4.foo;
+// >>empty object {} Type with generics<<
+// can be used as a constraint in a generic function.
+const myGenericFunc = (t) => {
+    return t;
+};
+const result1 = myGenericFunc("str");
+const result2 = myGenericFunc(123);
+const result3 = myGenericFunc(true);
+const result4 = myGenericFunc(null); // Argument of type 'null' is not assignable to parameter of type '{}'
+// NOTE: To represent an empty object, use Record<string, never> instead (check Utility types).
+// 
 // >TYPE ASSERTIONS/COERCION<
 // sometimes you have information about a type of a value that TS can't know about
 // for example when using document.getElementById TS know this will return some kind of HTMLElement
@@ -526,8 +563,8 @@ store.state = 12; //since the type has been inferred to be string assigning it t
 let string = "";
 string = 2;
 // >>GENERICS: Specifying Type Arguments<<
-// TypeScript can usually infer the intended type arguments in a generic call, but not always. For
-// example, let's say you wrote a function to combine two arrays
+// TypeScript can usually infer the intended type arguments in a generic call, but not always. 
+// For example, let's say you wrote a function to combine two arraysز
 function combine(arr1, arr2) {
     return arr1.concat(arr2);
 }
@@ -538,4 +575,4 @@ combine([0], ["STRING"]); // inferred generic type is number based on the 1st ar
 // to solve this 
 const combinedArr = combine([1, 2, 3], ["hello"]); // specifying Type argument instead of relying on Typescript to infer it
 // NOTE: When possible, use the type parameter itself rather than constraining it
-// NOTE: Always use as few type parameters as possible
+// NOTE: Always use as few generic type parameters as possible
