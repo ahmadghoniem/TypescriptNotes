@@ -1,11 +1,10 @@
-const myGenericFuncs = <T extends {}>(t: T) => {
-  return t.toString();
+interface Box {
+  contents: unknown;
+}
+let x: Box = {
+  contents: "hello world",
 };
-myGenericFuncs(new Date());
-console.log("lmao");
-await Promise.resolve("as");
-export {};
-interface NotOkay {
-  [x: number]: Animal;
-  [x: string]: Dog;
+// we could check 'x.contents'
+if (typeof x.contents === "string") {
+  console.log(x.contents.toLowerCase());
 }
