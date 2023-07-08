@@ -183,8 +183,22 @@ const Person = {
     skills: [],
 };
 Person.yearsOfExp = 2; // Property 'yearsOfExp' does not exist on type 'PersonType'
-// you can use VS Code's Quick Fix to add yearsOfExp as a property to PersonType with it's type inferred by TS
-// NOTE: use type for type aliases and make use of interface for declaration merging and defining object types.
+// trying it inline you will get a TS error.
+const cc2, Circle = {
+    color: "red",
+    radius: 42,
+};
+const cc = {
+    color: "red",
+    radius: 42,
+};
+// you can either use it inline or define a new type for the intersection.
+function draw(circle) {
+    console.log(`Color was ${circle.color}`);
+    console.log(`Radius was ${circle.radius}`);
+}
+// okay
+draw({ color: "blue", radius: 42 });
 // >ENUMS<
 // Unlike most TypeScript features
 // Enums are not a type-level addition to JavaScript.
@@ -466,13 +480,6 @@ console.log(dog.name);
 // generics allow for a placeholder / a type variable
 const echoString = (arg) => arg; // specific to a string but what if we wanted a generic echo
 const echo = (arg) => arg; // generic echo where you can pass any type you want
-// imagine you have a function that will be returning  
-function getElement(arr, index) {
-    return arr[index];
-}
-const arr = ["str", "", ""];
-arr.at();
-console.log(firstElement(arr, ""));
 const isObj = (arg) => (typeof arg === 'object' && !Array.isArray(arg) && arg !== null);
 const isTrue = (arg) => {
     if (typeof arg === 'object' && arg !== null && Object.keys(arg).length === 0) {

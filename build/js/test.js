@@ -1,7 +1,8 @@
-const myGenericFuncs = (t) => {
-    return t.toString();
+"use strict";
+let x = {
+    contents: "hello world",
 };
-myGenericFuncs(new Date());
-console.log("lmao");
-await Promise.resolve("as");
-export {};
+// we could check 'x.contents'
+if (typeof x.contents === "string") {
+    console.log(x.contents.toLowerCase());
+}

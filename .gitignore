@@ -8,6 +8,10 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+
+src/test.ts
+test.json
+build/js/test.js
 dist
 dist-ssr
 *.local

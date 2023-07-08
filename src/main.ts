@@ -286,7 +286,6 @@ type shirtType = {
   size: number;
 };
 
-
 // using a defined type to annotate an object
 const Person: PersonType = {
   name: "Ahmad",
@@ -297,6 +296,45 @@ Person.yearsOfExp = 2; // Property 'yearsOfExp' does not exist on type 'PersonTy
 // you can use VS Code's Quick Fix to add yearsOfExp as a property to PersonType with it's type inferred by TS
 
 // NOTE: use type for type aliases and make use of interface for declaration merging and defining object types.
+
+// > Intersection Types<
+// interfaces allowed us to build up new types from other types by extending them using the 'extends' keyword.
+// TypeScript provides another construct called intersection types that is mainly used to combine existing object types.
+// An intersection type is defined using the & operator.
+
+// scenario: you want to combine two interfaces.
+// First option: create a new interface and extend those two interfaces.
+
+interface Colorful {
+  color: string;
+}
+interface Circle {
+  radius: number;
+}
+// trying it inline you will get a TS error.
+const cc2: {} extends Colorful,Circle = {
+  color: "red",
+  radius: 42,
+  };
+
+// NOTE: you can't use it inline and you certainly need to create a new interface and extend both interfaces
+interface colorfulCirc extends Colorful, Circle {}
+
+const cc: colorfulCirc = {
+  color: "red",
+  radius: 42,
+};
+
+// Second option: use the intersection operator &.
+type ColorfulCircle = Colorful & Circle; 
+// you can either use it inline or define a new type for the intersection.
+
+function draw(circle: Colorful & Circle | ColorfulCircle) {
+  console.log(`Color was ${circle.color}`);
+  console.log(`Radius was ${circle.radius}`);
+}
+// okay
+draw({ color: "blue", radius: 42 });
 
 // >ENUMS<
 
@@ -725,15 +763,6 @@ console.log(dog.name);
 
 const echoString = (arg:string):string => arg; // specific to a string but what if we wanted a generic echo
 const echo = <T>(arg:T):T => arg; // generic echo where you can pass any type you want
-
-// imagine you have a function that will be returning  
-function getElement<Type,Index extends Array<Type>.length>(arr: Type[],  index:  number)  {
-  return arr[index];
-  }
-const arr = ["str","",""];
-arr.at()
-  console.log(firstElement(arr,""));
-
 
 const isObj = <T>(arg:T):boolean => (typeof arg === 'object' && !Array.isArray(arg) && arg !== null)
 // NOTE: echo and isObj won't aren't custom type guards and won't behave as type guard 
