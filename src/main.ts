@@ -44,17 +44,47 @@ let idk: RegExp = /\w+/g;
 // TIP: you can use VS Code intellisense to know beforehand the type of data
 // after hovering over idk turns out the data type for a regular expression is RegExp
 
-// > ARRAYS <
+// >ARRAYS<
 
 let stringsArr: Array<string> = ["one", "hey", "Dave"];
 let guitars: (string | number)[] = ["guitar", "les paul", 5150];
 let mixedData: Array<string | number | boolean> = ["evh", 1984, true];
-// string[] === Array<sting> (generic) you can use both
 
 stringsArr.push(42); // Argument of type 'number' is not assignable to parameter of type 'string'
 guitars[0] = 1984; // not locked in to the position of the element but rather to the types defined for the array (string|number)[]
-guitars = mixedData; // because guitars is of type (string | number)[] and mixedData is of type (string | number | boolean)[] it won't allow it while the other way around will work
+guitars = mixedData; // guitars is of type (string | number)[] and mixedData is of type (string | number | boolean)[] so TS won't allow it while the other way around will work.
 
+// string[] is just a shorthand for Array<sting> (generic) and you can use both.
+
+// Array-like-interface as a generic type.
+interface ArrayInterface<Type> {
+  //  Gets or sets the length of the array.
+  length: number;
+
+  //  Removes the last element from an array and returns it.
+  pop(): Type | undefined;
+  
+  //  Appends new elements to an array, and returns the new length of the array.
+  push(...items: Type[]): number;
+  }
+  // >>The ReadonlyArray Type<<
+  // The ReadonlyArray is a special type that describes arrays that shouldn't be changed.
+  function doStuff(values: ReadonlyArray<string>) {
+    // We can read from 'values'...
+    const copy = values.slice();
+    console.log(`The first value is ${values[0]}`);
+    // ...but we can't mutate 'values'.
+    values.push("hello!");
+    // Property 'push' does not exist on type 'readonly string[]'.
+
+    // but push method actually does exist on the prototype of values array, 
+    // it doesn't alter the shape of the prototype array by any means.
+     "push" in Object.getOwnPropertyNames(Object.getPrototypeOf(  []  )); // true
+  }
+  const readOnlyArray: ReadonlyArray<string> = ["red", "green", "blue"];
+  readOnlyArray[0] = "yellow"; // Index signature in type 'readonly string[]' only permits reading.
+  // NOTE: A shorthand syntax for ReadonlyArray<Type> would be readonly Type[].
+  
 // >> Any Type <<
 // In TypeScript, the any type is a special type that represents values that can be of any type.
 // It is a dynamic type that essentially disables type checking for the variable or expression it is applied to
@@ -73,7 +103,7 @@ bands.push(band_311); // IS OK
  * intellisense will infer the data type of both myTuple and mixed is of type (string | number | boolean)[]
  * so if you need to type annotate an array as a tuple you would need to define it yourself  */
 
-let myTuple: [string, number, boolean] = ["dave", 42, true];
+let myTuple: [string, number, boolean] = ["dave", 42, true]; // annotating myTuple with a tuple type myself
 let mixed = ["john", 1, false];
 
 myTuple = mixed; // Target (destination) requires 3 element(s) but source may have fewer.
@@ -83,6 +113,22 @@ mixed[3] = "Sheko"; // mixed doesn't have a predefined length
 let myName = "ahmad";
 myTuple[2] = myName; // type string isn't assignable to boolean
 myTuple[3] = myName; // Tuple type '[string, number, boolean]' of length '3' has no element at index '3'
+
+/* tuples can have optional properties by writing out a
+question mark ( ? after an element's type). Optional tuple elements can only come at the end, and
+also affect the type of length .
+ */
+type Either2dOr3d = [number, number, number?];
+function setCoordinate(coord: Either2dOr3d) {
+const [x, y, z] = coord;
+// const z: number | undefined
+console.log(`Provided coordinates had ${coord.length} dimensions`);
+// (property) length: 2 | 3
+}
+
+// array literals with const
+// assertions will be inferred with readonly tuple types.
+let point = [3, 4] as const;
 
 //  >OBJECTS<
 
@@ -176,7 +222,7 @@ const testFunction = (strings: string | string[] | null) => {
 // as by this you ignore falsy values like "" for strings 0n for bigints and 0 for numbers instead use (strings !== null)
 
 // >>in operator narrowing<<
-// The JavaScript in operator is used to check if a specified property exists in an object or in its inherited properties (in other words, its prototype chain)
+// The JavaScript in operator is used to check if a specified property exists in an object or in its inherited properties (in other words, its prototype chain).
 type Fish = { swim: () => void };
 type Bird = { fly: () => void };
 type Human = { swim?: () => void; fly?: () => void };
@@ -497,7 +543,7 @@ const addFuncDestructure = ({ a: number, b = 100, c }) => {
  * month/day/year specification (three arguments).
  * In TypeScript, we can specify a function that can be called in different ways by writing overload signatures. */
 
-// To do this, write some number of function signatures , followed by the body of the function
+// To do this, write some number of function signatures , followed by the body of the function.
 interface Coordinate {
     [key: string]:  number,
   x: number;
@@ -533,7 +579,6 @@ function parseCoordinate(arg1: unknown, arg2?: unknown): Coordinate {
 
   return coord;
 }
-
 console.log(parseCoordinate(10, 20));
 console.log(parseCoordinate({ x: 52, y: 35 }));
 console.log(parseCoordinate("x:12,y:22"));
@@ -786,8 +831,6 @@ const isTrue = <T>(arg:T):BoolCheck<T> => {
   return {value:  arg, is:  !!arg }
 }
 
-// 
-
 interface hasID {
   id:number
 }
@@ -797,10 +840,11 @@ const processUser = <T extends hasID>(user:  T):T => {
 }
 console.log(processUser({id:1,name:"hello"})); // if you passed an object that doesn't have an id prop you will get an error
 
-const getUsersProps = <T extends hasID,K extends keyof T>(users: T[], key: K):T[K][] => {
+const getUsersProps = <T extends hasID,K extends keyof T>(users: T[], key: K):Array<T[K]> => {
   return users.map(user => user[key]); 
-  // also because key Param is extending keys of T which are the user's data there's no need to coerce the type of key as keyof T
-  // which is another use case of generics
+  // Array of T elements indexed with K.
+  // NOTE: because key Param is extending keys of T, there's no need to coerce the type of key as keyof T.
+  // which is another use case for generics.
 }
 const userArray = [{
     "id": 1,
@@ -895,3 +939,101 @@ function combine<Type>(arr1: Type[], arr2: Type[]): Type[] {
 // NOTE: When possible, use the type parameter itself rather than constraining it
 // NOTE: Always use as few generic type parameters as possible
 
+// >INDEXED ACCESS TYPE<
+// We can use an indexed access type to look up a specific property on another type.
+type Person = { age: number; name: string; alive: boolean };
+type Age = Person["alive"]; // boolean
+
+// The indexing type is itself a type, so we can use unions, keyof , or other types entirely.
+
+type I1 = Person["age" | "name"]; // number | string
+
+type I2 = Person[keyof Person]; // string | number | boolean using keyof Person directly will infer keyof Person
+
+type AliveOrName = "alive" | "name";
+type I3 = Person[AliveOrName]; // string | boolean
+
+// NOTE: You can only use types when indexing, meaning you can't use a variable reference.
+
+const key = "age"; // using const in this context makes the inferred type of key is of literal type "age"
+// combined with typeof, you can will be able to index with the literal type "age" through a variable.
+
+type newAge = Person[typeof key]; 
+
+// wrong way.
+type PersonAge = Person[key]; // key refers to a value, but is being used as a type here. Did you mean 'typeof key'
+
+// >>Getting an array's elements type<<
+// Using number to get the type of an array's elements. 
+// We can combine this with typeof to conveniently capture the element type of an array literal
+
+const ArrayFullOfElements = [
+  { name: "Alice", age: 15 },
+  { name: "Bob", age: 23 },
+  { name: "Eve", age: 38, alive: false },
+];
+type ArrayElementsTypes = (typeof ArrayFullOfElements)[number];
+type firstPropType = (typeof ArrayFullOfElements)[number]["name"]; // string
+// don't forget the easy way of doing it.
+type namePropType = Person["name"];
+
+// >Conditional Types<
+// Conditional types let us deterministically define type transformations depending on a condition.
+// They are a ternary conditional operator applied at the type level rather than at the value level.
+
+// Conditional types take a form that looks a little like conditional expressions in JavaScript.
+// ( condition ?  trueExpression : falseExpression )
+
+interface Animal {
+  live(): void;
+}
+interface Dog extends Animal {
+  woof(): void;
+}
+
+type Example1 = Dog extends Animal ? number : string; // type Example1 = number
+type Example2 = RegExp extends Animal ? number : string; // type Example2 = string
+
+/** conditional types might not immediately seem useful - we can tell
+ * ourselves whether or not Dog extends Animal and pick number or string ! But the power of
+ * conditional types comes from using them with generics. */
+// check page 121.
+
+// >declare keyword<
+// In TypeScript, the declare keyword is used to define the shape of an existing module, library, or global variable.
+// This allows you to provide type information for code that TypeScript cannot infer types for automatically.
+// Typically, you would use declare when working with third-party libraries or global objects that are not written in TypeScript.
+
+// >Mapped Types<
+
+// >Utility Types<
+// Typescript offer many utility types that are helpful for common type transformation.
+interface Assignment {
+  studentId:string,
+  title:string,
+  grade:number,
+  verified?:boolean,
+}
+
+// Partial<T>
+const updateAssignment = (assign:Assignment,propsToUpdate:Partial<Assignment>):Assignment => {
+  return {...assign,...propsToUpdate}
+}
+let assign1: Assignment = {
+  studentId: "123",
+  title: "Final project",
+  grade: 100,
+  verified:true
+};
+const updatedAssignment:Assignment = updateAssignment(assign1, { studentId: "123" });
+
+// Required
+
+const recordAssignment = (assign:Required<Assignment>):Assignment => {
+  // send to database, etc.
+  return assign;
+}
+let recordedAssignment1 = recordAssignment({...assign1,verified:true}); // check errors
+let recordedAssignment2 = recordAssignment(...assign1); // check errors
+
+// Readonly

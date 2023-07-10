@@ -38,14 +38,29 @@ const sum = (a, b) => a + b;
 let idk = /\w+/g;
 // TIP: you can use VS Code intellisense to know beforehand the type of data
 // after hovering over idk turns out the data type for a regular expression is RegExp
-// > ARRAYS <
+// >ARRAYS<
 let stringsArr = ["one", "hey", "Dave"];
 let guitars = ["guitar", "les paul", 5150];
 let mixedData = ["evh", 1984, true];
-// string[] === Array<sting> (generic) you can use both
 stringsArr.push(42); // Argument of type 'number' is not assignable to parameter of type 'string'
 guitars[0] = 1984; // not locked in to the position of the element but rather to the types defined for the array (string|number)[]
-guitars = mixedData; // because guitars is of type (string | number)[] and mixedData is of type (string | number | boolean)[] it won't allow it while the other way around will work
+guitars = mixedData; // guitars is of type (string | number)[] and mixedData is of type (string | number | boolean)[] so TS won't allow it while the other way around will work.
+// >>The ReadonlyArray Type<<
+// The ReadonlyArray is a special type that describes arrays that shouldn't be changed.
+function doStuff(values) {
+    // We can read from 'values'...
+    const copy = values.slice();
+    console.log(`The first value is ${values[0]}`);
+    // ...but we can't mutate 'values'.
+    values.push("hello!");
+    // Property 'push' does not exist on type 'readonly string[]'.
+    // but push method actually does exist on the prototype of values array, 
+    // it doesn't alter the shape of the prototype array by any means.
+    "push" in Object.getOwnPropertyNames(Object.getPrototypeOf([])); // true
+}
+const readOnlyArray = ["red", "green", "blue"];
+readOnlyArray[0] = "yellow"; // Index signature in type 'readonly string[]' only permits reading.
+// NOTE: A shorthand syntax for ReadonlyArray<Type> would be readonly Type[].
 // >> Any Type <<
 // In TypeScript, the any type is a special type that represents values that can be of any type.
 // It is a dynamic type that essentially disables type checking for the variable or expression it is applied to
@@ -60,7 +75,7 @@ bands.push(band_311); // IS OK
  * A tuple is data type introduced by Typescript which is a typed array with a pre-defined length and types for each index.
  * intellisense will infer the data type of both myTuple and mixed is of type (string | number | boolean)[]
  * so if you need to type annotate an array as a tuple you would need to define it yourself  */
-let myTuple = ["dave", 42, true];
+let myTuple = ["dave", 42, true]; // annotating myTuple with a tuple type myself
 let mixed = ["john", 1, false];
 myTuple = mixed; // Target (destination) requires 3 element(s) but source may have fewer.
 mixed = myTuple; // no problem arises
@@ -68,6 +83,15 @@ mixed[3] = "Sheko"; // mixed doesn't have a predefined length
 let myName = "ahmad";
 myTuple[2] = myName; // type string isn't assignable to boolean
 myTuple[3] = myName; // Tuple type '[string, number, boolean]' of length '3' has no element at index '3'
+function setCoordinate(coord) {
+    const [x, y, z] = coord;
+    // const z: number | undefined
+    console.log(`Provided coordinates had ${coord.length} dimensions`);
+    // (property) length: 2 | 3
+}
+// array literals with const
+// assertions will be inferred with readonly tuple types.
+let point = [3, 4];
 //  >OBJECTS<
 let myObject;
 myObject = {
@@ -498,8 +522,9 @@ const processUser = (user) => {
 console.log(processUser({ id: 1, name: "hello" })); // if you passed an object that doesn't have an id prop you will get an error
 const getUsersProps = (users, key) => {
     return users.map(user => user[key]);
-    // also because key Param is extending keys of T which are the user's data there's no need to coerce the type of key as keyof T
-    // which is another use case of generics
+    // Array of T elements indexed with K.
+    // NOTE: because key Param is extending keys of T, there's no need to coerce the type of key as keyof T.
+    // which is another use case for generics.
 };
 const userArray = [{
         "id": 1,
@@ -581,5 +606,32 @@ combine([0], ["STRING"]); // inferred generic type is number based on the 1st ar
 // Type 'number' is not assignable to type 'string'
 // to solve this 
 const combinedArr = combine([1, 2, 3], ["hello"]); // specifying Type argument instead of relying on Typescript to infer it
-// NOTE: When possible, use the type parameter itself rather than constraining it
-// NOTE: Always use as few generic type parameters as possible
+// NOTE: You can only use types when indexing, meaning you can't use a variable reference.
+const key = "age"; // using const in this context makes the inferred type of key is of literal type "age"
+// >>Getting an array's elements type<<
+// Using number to get the type of an array's elements. 
+// We can combine this with typeof to conveniently capture the element type of an array literal
+const ArrayFullOfElements = [
+    { name: "Alice", age: 15 },
+    { name: "Bob", age: 23 },
+    { name: "Eve", age: 38, alive: false },
+];
+// Partial<T>
+const updateAssignment = (assign, propsToUpdate) => {
+    return { ...assign, ...propsToUpdate };
+};
+let assign1 = {
+    studentId: "123",
+    title: "Final project",
+    grade: 100,
+    verified: true
+};
+const updatedAssignment = updateAssignment(assign1, { studentId: "123" });
+// Required
+const recordAssignment = (assign) => {
+    // send to database, etc.
+    return assign;
+};
+let recordedAssignment1 = recordAssignment({ ...assign1, verified: true }); // check errors
+let recordedAssignment2 = recordAssignment(...assign1); // check errors
+// Readonly
